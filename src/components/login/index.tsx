@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
 import { useIntl } from "@/locale";
 import { useIsLogin, useUserStore } from "@/store/user";
-import { useEffect } from "react";   // ← 新增
+import { useEffect } from "react"; 
 
 const loaded = import("@/api/storage");
 const loadStorageAPI = async () => {
@@ -20,7 +20,6 @@ export default function Login() {
     const isLogin = useIsLogin();
     const [loading] = useUserStore(useShallow((state) => [state.loading]));
 
-    // ==================== 新增：处理 Worker 回调后的自动登录 ====================
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const githubAuthorizedStr = params.get("github_authorized");
@@ -28,15 +27,14 @@ export default function Login() {
             try {
                 const tokenData = JSON.parse(decodeURIComponent(githubAuthorizedStr));
                 if (tokenData.access_token) {
-                    // 完全模拟原项目存储方式
                     localStorage.setItem("SYNC_ENDPOINT", "github");
                     localStorage.setItem(
                         "github_user_token",
                         JSON.stringify({ accessToken: tokenData.access_token })
                     );
-                    // 清理 URL
+                   
                     window.history.replaceState({}, document.title, window.location.pathname);
-                    // 刷新页面让 zustand store 重新读取 token → isLogin 变为 true
+                   
                     window.location.reload();
                 }
             } catch (e) {
@@ -44,7 +42,7 @@ export default function Login() {
             }
         }
     }, []);
-    // =========================================================================
+    
 
     const handleGitHubLogin = () => {
         const workerUrl = import.meta.env.VITE_AUTH_WORKER;
