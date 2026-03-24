@@ -20,29 +20,34 @@ export default function Login() {
     const isLogin = useIsLogin();
     const [loading] = useUserStore(useShallow((state) => [state.loading]));
 
-    // 处理 Worker 回调后的自动登录
+    // 处理 Worker 回调后的自动登录（已修复 token 过期问题）
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const githubAuthorizedStr = params.get("github_authorized");
         if (githubAuthorizedStr) {
             try {
-                const tokenData = JSON.parse(
-                    decodeURIComponent(githubAuthorizedStr),
-                );
+                const tokenData = JSON.parse(decodeURIComponent(githubAuthorizedStr));
                 if (tokenData.access_token) {
-                    // 完全模拟原项目存储方式
+                    const expires = Date.now() + ((tokenData.expires_in || 2592000) * 1000);
+
+                    // 完全模拟原项目存储方式 + 添加 expires 字段（解决“token已过期”）
                     localStorage.setItem("SYNC_ENDPOINT", "github");
                     localStorage.setItem(
                         "github_user_token",
-                        JSON.stringify({ accessToken: tokenData.access_token }),
+                        JSON.stringify({
+                            accessToken: tokenData.access_token,
+                            expires,           // ← 关键修复
+                        }),
                     );
+
                     // 清理 URL
                     window.history.replaceState(
                         {},
                         document.title,
                         window.location.pathname,
                     );
-                    // 刷新页面让 zustand store 重新读取 token → isLogin 变为 true
+
+                    // 立即 reload，让 zustand store 重新读取 token
                     window.location.reload();
                 }
             } catch (e) {
