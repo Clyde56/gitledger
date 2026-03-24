@@ -5,25 +5,13 @@ import { useIntl } from "@/locale";
 import { useIsLogin, useUserStore } from "@/store/user";
 
 const loaded = import("@/api/storage");
-
 const loadStorageAPI = async () => {
     const lib = await loaded;
     return lib.StorageAPI;
 };
-// 示例：把原来的登录处理函数改成这样
-const handleGitHubLogin = () => {
-  const workerUrl = import.meta.env.VITE_AUTH_WORKER;
-  if (!workerUrl) {
-    alert('请先在 Cloudflare Pages 设置 VITE_AUTH_WORKER 环境变量');
-    return;
-  }
-  // 关键：跳转到你的 Worker /login
-  window.location.href = `${workerUrl}/login`;
-};
+
 const primaryButtonStyle = `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2`;
-
 const secondaryButtonStyle = `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2 w-full`;
-
 const betaClassName = `relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(50%)]`;
 
 export default function Login() {
@@ -34,9 +22,25 @@ export default function Login() {
             return [state.loading];
         }),
     );
+
+    // ==================== 新增：自定义 Worker 登录处理 ====================
+    // 使用 VITE_AUTH_WORKER 环境变量（你在 Cloudflare Pages 中已设置）
+    // 直接跳转到你的 gitledger-auth Worker 的 /login 端点，完成 OAuth 流程
+    const handleGitHubLogin = () => {
+        const workerUrl = import.meta.env.VITE_AUTH_WORKER;
+        if (!workerUrl) {
+            alert("VITE_AUTH_WORKER 环境变量未设置！\n请在 Cloudflare Pages → Settings → Environment variables 中添加 VITE_AUTH_WORKER = https://你的worker地址");
+            return;
+        }
+        // 关键修复：直接跳转 Worker，不再走原 StorageAPI.loginWith("github")
+        window.location.href = `${workerUrl}/login`;
+    };
+    // ====================================================================
+
     if (isLogin) {
         return null;
     }
+
     return createPortal(
         <div className="fixed z-[1] top-0 right-0 w-screen h-screen overflow-hidden">
             <div className="absolute w-full h-full bg-[rgba(0,0,0,0.5)] z-[-1]"></div>
@@ -51,10 +55,17 @@ export default function Login() {
                             </div>
                         ) : (
                             <>
-                                {/* Github */}
+                                {/* Github —— 已修改为使用自定义 Worker */}
                                 <div className="flex flex-col gap-1">
                                     <button
-                                        onClick={handleGitHubLogin}>GitHub 登录
+                                        type="button"
+                                        className={`${primaryButtonStyle}`}
+                                        onClick={handleGitHubLogin}   {/* ← 关键修改点 */}
+                                    >
+                                        <i className="icon-[mdi--github]"></i>
+                                        <div className="flex-1">
+                                            {t("login-to-github")}
+                                        </div>
                                     </button>
                                     <button
                                         type="button"
@@ -70,7 +81,8 @@ export default function Login() {
                                         {t("or-use-an-exist-token")}
                                     </button>
                                 </div>
-                                {/* Gitee */}
+
+                                {/* Gitee（保持原样） */}
                                 <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
@@ -109,6 +121,7 @@ export default function Login() {
                                         {t("or-use-an-exist-token")}
                                     </button>
                                 </div>
+
                                 {/* Web DAV */}
                                 <div>
                                     <button
@@ -124,6 +137,7 @@ export default function Login() {
                                         <div className="flex-1">Web DAV</div>
                                     </button>
                                 </div>
+
                                 {/* S3 */}
                                 <div>
                                     <button
@@ -139,6 +153,7 @@ export default function Login() {
                                         <div className="flex-1">S3</div>
                                     </button>
                                 </div>
+
                                 {/* Offline */}
                                 <div>
                                     <button
