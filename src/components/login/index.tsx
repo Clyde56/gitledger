@@ -10,7 +10,16 @@ const loadStorageAPI = async () => {
     const lib = await loaded;
     return lib.StorageAPI;
 };
-
+// 示例：把原来的登录处理函数改成这样
+const handleGitHubLogin = () => {
+  const workerUrl = import.meta.env.VITE_AUTH_WORKER;
+  if (!workerUrl) {
+    alert('请先在 Cloudflare Pages 设置 VITE_AUTH_WORKER 环境变量');
+    return;
+  }
+  // 关键：跳转到你的 Worker /login
+  window.location.href = `${workerUrl}/login`;
+};
 const primaryButtonStyle = `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2`;
 
 const secondaryButtonStyle = `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2 w-full`;
@@ -47,16 +56,7 @@ export default function Login() {
                                     <button
                                         type="button"
                                         className={`${primaryButtonStyle}`}
-                                        onClick={async () => {
-                                            const StorageAPI =
-                                                await loadStorageAPI();
-                                            StorageAPI.loginWith("github");
-                                        }}
-                                    >
-                                        <i className="icon-[mdi--github]"></i>
-                                        <div className="flex-1">
-                                            {t("login-to-github")}
-                                        </div>
+                                        onClick={handleGitHubLogin}>GitHub 登录
                                     </button>
                                     <button
                                         type="button"
