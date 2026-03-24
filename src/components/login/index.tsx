@@ -23,17 +23,16 @@ export default function Login() {
         }),
     );
 
-    // ==================== 自定义 Worker 登录处理（已修复构建错误） ====================
-    // 使用你在 Cloudflare Pages 设置的 VITE_AUTH_WORKER 变量，直接跳转到 Worker /login
     const handleGitHubLogin = () => {
         const workerUrl = import.meta.env.VITE_AUTH_WORKER;
         if (!workerUrl) {
-            alert("VITE_AUTH_WORKER 环境变量未设置！\n请在 Cloudflare Pages → Settings → Environment variables 中添加");
+            alert(
+                "VITE_AUTH_WORKER 环境变量未设置！\n请在 Cloudflare Pages → Settings → Environment variables 中添加",
+            );
             return;
         }
         window.location.href = `${workerUrl}/login`;
     };
-    // =============================================================================
 
     if (isLogin) {
         return null;
@@ -53,7 +52,6 @@ export default function Login() {
                             </div>
                         ) : (
                             <>
-                               
                                 <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
@@ -80,7 +78,6 @@ export default function Login() {
                                     </button>
                                 </div>
 
-                                {/* Gitee（保持原样） */}
                                 <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
@@ -120,7 +117,6 @@ export default function Login() {
                                     </button>
                                 </div>
 
-                                {/* Web DAV */}
                                 <div>
                                     <button
                                         type="button"
@@ -136,7 +132,6 @@ export default function Login() {
                                     </button>
                                 </div>
 
-                                {/* S3 */}
                                 <div>
                                     <button
                                         type="button"
@@ -152,7 +147,6 @@ export default function Login() {
                                     </button>
                                 </div>
 
-                                {/* Offline */}
                                 <div>
                                     <button
                                         type="button"
