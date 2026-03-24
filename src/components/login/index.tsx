@@ -23,19 +23,17 @@ export default function Login() {
         }),
     );
 
-    // ==================== 新增：自定义 Worker 登录处理 ====================
-    // 使用 VITE_AUTH_WORKER 环境变量（你在 Cloudflare Pages 中已设置）
-    // 直接跳转到你的 gitledger-auth Worker 的 /login 端点，完成 OAuth 流程
+    // ==================== 自定义 Worker 登录处理（已修复构建错误） ====================
+    // 使用你在 Cloudflare Pages 设置的 VITE_AUTH_WORKER 变量，直接跳转到 Worker /login
     const handleGitHubLogin = () => {
         const workerUrl = import.meta.env.VITE_AUTH_WORKER;
         if (!workerUrl) {
-            alert("VITE_AUTH_WORKER 环境变量未设置！\n请在 Cloudflare Pages → Settings → Environment variables 中添加 VITE_AUTH_WORKER = https://你的worker地址");
+            alert("VITE_AUTH_WORKER 环境变量未设置！\n请在 Cloudflare Pages → Settings → Environment variables 中添加");
             return;
         }
-        // 关键修复：直接跳转 Worker，不再走原 StorageAPI.loginWith("github")
         window.location.href = `${workerUrl}/login`;
     };
-    // ====================================================================
+    // =============================================================================
 
     if (isLogin) {
         return null;
@@ -55,12 +53,12 @@ export default function Login() {
                             </div>
                         ) : (
                             <>
-                                {/* Github —— 已修改为使用自定义 Worker */}
+                                {/* Github —— 已改为使用你的自定义 Worker */}
                                 <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
                                         className={`${primaryButtonStyle}`}
-                                        onClick={handleGitHubLogin}   {/* ← 关键修改点 */}
+                                        onClick={handleGitHubLogin}
                                     >
                                         <i className="icon-[mdi--github]"></i>
                                         <div className="flex-1">
