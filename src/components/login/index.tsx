@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
 import { useIntl } from "@/locale";
 import { useIsLogin, useUserStore } from "@/store/user";
+import { useEffect } from "react";   // ← 新增
 
 const loaded = import("@/api/storage");
 const loadStorageAPI = async () => {
@@ -17,18 +18,38 @@ const betaClassName = `relative after:content-['beta'] after:rounded after:bg-ye
 export default function Login() {
     const t = useIntl();
     const isLogin = useIsLogin();
-    const [loading] = useUserStore(
-        useShallow((state) => {
-            return [state.loading];
-        }),
-    );
+    const [loading] = useUserStore(useShallow((state) => [state.loading]));
+
+    // ==================== 新增：处理 Worker 回调后的自动登录 ====================
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const githubAuthorizedStr = params.get("github_authorized");
+        if (githubAuthorizedStr) {
+            try {
+                const tokenData = JSON.parse(decodeURIComponent(githubAuthorizedStr));
+                if (tokenData.access_token) {
+                    // 完全模拟原项目存储方式
+                    localStorage.setItem("SYNC_ENDPOINT", "github");
+                    localStorage.setItem(
+                        "github_user_token",
+                        JSON.stringify({ accessToken: tokenData.access_token })
+                    );
+                    // 清理 URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    // 刷新页面让 zustand store 重新读取 token → isLogin 变为 true
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error("解析 github_authorized 失败", e);
+            }
+        }
+    }, []);
+    // =========================================================================
 
     const handleGitHubLogin = () => {
         const workerUrl = import.meta.env.VITE_AUTH_WORKER;
         if (!workerUrl) {
-            alert(
-                "VITE_AUTH_WORKER 环境变量未设置！\n请在 Cloudflare Pages → Settings → Environment variables 中添加",
-            );
+            alert("VITE_AUTH_WORKER 环境变量未设置！");
             return;
         }
         window.location.href = `${workerUrl}/login`;
@@ -52,6 +73,7 @@ export default function Login() {
                             </div>
                         ) : (
                             <>
+                                {/* Github */}
                                 <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
@@ -59,58 +81,41 @@ export default function Login() {
                                         onClick={handleGitHubLogin}
                                     >
                                         <i className="icon-[mdi--github]"></i>
-                                        <div className="flex-1">
-                                            {t("login-to-github")}
-                                        </div>
+                                        <div className="flex-1">{t("login-to-github")}</div>
                                     </button>
                                     <button
                                         type="button"
                                         className="underline text-xs cursor-pointer"
                                         onClick={async () => {
-                                            const StorageAPI =
-                                                await loadStorageAPI();
-                                            StorageAPI.loginManuallyWith(
-                                                "github",
-                                            );
+                                            const StorageAPI = await loadStorageAPI();
+                                            StorageAPI.loginManuallyWith("github");
                                         }}
                                     >
                                         {t("or-use-an-exist-token")}
                                     </button>
                                 </div>
 
+                                {/* 以下 Gitee / WebDAV / S3 / Offline 全部保持不变 */}
                                 <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
                                         className={`${primaryButtonStyle} !bg-[#b7312d] !hover:bg-[#b7312d]/80`}
                                         onClick={async () => {
-                                            const StorageAPI =
-                                                await loadStorageAPI();
+                                            const StorageAPI = await loadStorageAPI();
                                             StorageAPI.loginWith("gitee");
                                         }}
                                     >
-                                        <svg
-                                            fill="currentColor"
-                                            width="32"
-                                            height="32"
-                                            viewBox="0 0 24 24"
-                                            role="img"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
+                                        <svg fill="currentColor" width="32" height="32" viewBox="0 0 24 24" role="img" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M11.984 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.016 0zm6.09 5.333c.328 0 .593.266.592.593v1.482a.594.594 0 0 1-.593.592H9.777c-.982 0-1.778.796-1.778 1.778v5.63c0 .327.266.592.593.592h5.63c.982 0 1.778-.796 1.778-1.778v-.296a.593.593 0 0 0-.592-.593h-4.15a.592.592 0 0 1-.592-.592v-1.482a.593.593 0 0 1 .593-.592h6.815c.327 0 .593.265.593.592v3.408a4 4 0 0 1-4 4H5.926a.593.593 0 0 1-.593-.593V9.778a4.444 4.444 0 0 1 4.445-4.444h8.296z" />
                                         </svg>
-                                        <div className="flex-1">
-                                            {t("login-to-gitee")}
-                                        </div>
+                                        <div className="flex-1">{t("login-to-gitee")}</div>
                                     </button>
                                     <button
                                         type="button"
                                         className="underline text-xs cursor-pointer"
                                         onClick={async () => {
-                                            const StorageAPI =
-                                                await loadStorageAPI();
-                                            StorageAPI.loginManuallyWith(
-                                                "gitee",
-                                            );
+                                            const StorageAPI = await loadStorageAPI();
+                                            StorageAPI.loginManuallyWith("gitee");
                                         }}
                                     >
                                         {t("or-use-an-exist-token")}
@@ -122,8 +127,7 @@ export default function Login() {
                                         type="button"
                                         className={`${secondaryButtonStyle} ${betaClassName}`}
                                         onClick={async () => {
-                                            const StorageAPI =
-                                                await loadStorageAPI();
+                                            const StorageAPI = await loadStorageAPI();
                                             StorageAPI.loginWith("webdav");
                                         }}
                                     >
@@ -137,8 +141,7 @@ export default function Login() {
                                         type="button"
                                         className={`${secondaryButtonStyle} ${betaClassName}`}
                                         onClick={async () => {
-                                            const StorageAPI =
-                                                await loadStorageAPI();
+                                            const StorageAPI = await loadStorageAPI();
                                             StorageAPI.loginWith("s3");
                                         }}
                                     >
@@ -152,15 +155,12 @@ export default function Login() {
                                         type="button"
                                         className={`${secondaryButtonStyle} !w-full`}
                                         onClick={async () => {
-                                            const StorageAPI =
-                                                await loadStorageAPI();
+                                            const StorageAPI = await loadStorageAPI();
                                             StorageAPI.loginWith("offline");
                                         }}
                                     >
                                         <i className="icon-[mdi--local]"></i>
-                                        <div className="flex-1">
-                                            {t("offline-mode")}
-                                        </div>
+                                        <div className="flex-1">{t("offline-mode")}</div>
                                     </button>
                                 </div>
                             </>
@@ -176,11 +176,7 @@ export default function Login() {
 function Guide({ className }: { className?: string }) {
     const t = useIntl();
     return (
-        <div
-            className={
-                "w-full p-4 flex-1 border-b bg-stone-800 text-white flex flex-col items-center justify-center gap-4 relative"
-            }
-        >
+        <div className="w-full p-4 flex-1 border-b bg-stone-800 text-white flex flex-col items-center justify-center gap-4 relative">
             <h1 className="text-3xl font-bold">{t("APP_NAME")}</h1>
             <p className="text-sm text-center">{t("app-introduce")}</p>
             <div className="text-xs opacity-60">{t("pwa-install-tip")}</div>
