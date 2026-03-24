@@ -53,7 +53,7 @@ export default function Login() {
                             </div>
                         ) : (
                             <>
-                                {/* Github —— 已改为使用你的自定义 Worker */}
+                               
                                 <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
