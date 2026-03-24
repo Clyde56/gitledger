@@ -54,8 +54,6 @@ export default function Login() {
                                 {/* Github */}
                                 <div className="flex flex-col gap-1">
                                     <button
-                                        type="button"
-                                        className={`${primaryButtonStyle}`}
                                         onClick={handleGitHubLogin}>GitHub 登录
                                     </button>
                                     <button
