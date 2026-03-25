@@ -20,7 +20,7 @@ export default function Login() {
     const isLogin = useIsLogin();
     const [loading] = useUserStore(useShallow((state) => [state.loading]));
 
-    // 处理 Worker 回调后的自动登录（已修复 token 过期问题）
+    // 处理 Worker 回调后的自动登录（已完美匹配官方 token 格式）
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const githubAuthorizedStr = params.get("github_authorized");
@@ -30,16 +30,18 @@ export default function Login() {
                     decodeURIComponent(githubAuthorizedStr),
                 );
                 if (tokenData.access_token) {
-                    const expires =
+                    // 关键修复：字段名必须是 expiresIn（官方 LoginAPI 要求）
+                    // expires_in 来自 Worker（秒数），这里转为绝对毫秒时间戳
+                    const expiresIn =
                         Date.now() + (tokenData.expires_in || 2592000) * 1000;
 
-                    // 完全模拟原项目存储方式 + 添加 expires 字段（解决“token已过期”）
+                    // 完全模拟官方 afterLogin + manuallySetToken 的存储格式
                     localStorage.setItem("SYNC_ENDPOINT", "github");
                     localStorage.setItem(
                         "github_user_token",
                         JSON.stringify({
                             accessToken: tokenData.access_token,
-                            expires, // ← 关键修复
+                            expiresIn, // ← 必须是这个字段名！
                         }),
                     );
 
@@ -50,7 +52,7 @@ export default function Login() {
                         window.location.pathname,
                     );
 
-                    // 立即 reload，让 zustand store 重新读取 token
+                    // 立即 reload，让 StorageAPI / user store 重新读取 token
                     window.location.reload();
                 }
             } catch (e) {
@@ -113,7 +115,7 @@ export default function Login() {
                                     </button>
                                 </div>
 
-                                {/* Gitee */}
+                                {/* Gitee（保持原样） */}
                                 <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
