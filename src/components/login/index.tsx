@@ -26,9 +26,12 @@ export default function Login() {
         const githubAuthorizedStr = params.get("github_authorized");
         if (githubAuthorizedStr) {
             try {
-                const tokenData = JSON.parse(decodeURIComponent(githubAuthorizedStr));
+                const tokenData = JSON.parse(
+                    decodeURIComponent(githubAuthorizedStr),
+                );
                 if (tokenData.access_token) {
-                    const expires = Date.now() + ((tokenData.expires_in || 2592000) * 1000);
+                    const expires =
+                        Date.now() + (tokenData.expires_in || 2592000) * 1000;
 
                     // 完全模拟原项目存储方式 + 添加 expires 字段（解决“token已过期”）
                     localStorage.setItem("SYNC_ENDPOINT", "github");
@@ -36,7 +39,7 @@ export default function Login() {
                         "github_user_token",
                         JSON.stringify({
                             accessToken: tokenData.access_token,
-                            expires,           // ← 关键修复
+                            expires, // ← 关键修复
                         }),
                     );
 
